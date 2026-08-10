@@ -1,11 +1,213 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>PakePlus</title>
-    </head>
-    <body>
-        PakePlus
-    </body>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <title>DX Pass 生成器</title>
+    <link rel="icon" href="./static/favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="./static/DX_Pass.css" />
+    <link rel="stylesheet" href="./static/app.css" />
+</head>
+<body>
+    <!-- ===== 侧边栏（桌面端）/ 底部抽屉（移动端） ===== -->
+    <aside id="sidebar">
+        <!-- 小白条手柄 -->
+        <div class="drawer-handle" id="drawerHandle">
+            <span class="handle-bar"></span>
+            <span class="handle-label">展开</span>
+        </div>
+
+        <!-- 抽屉内容 -->
+        <div class="drawer-content">
+            <h1>DX Pass 生成器</h1>
+            <p class="sub">填写信息，右侧实时预览；设置自动保存。</p>
+            <div class="nav">
+                <a href="#" id="cookieLink">Cookie 查看</a>
+                <a href="#" id="aliasesLink">角色别名</a>
+            </div>
+
+            <div class="section-title">玩家信息</div>
+            <div class="field switch-row">
+                <label style="margin:0;">水鱼获取（自动拉取昵称/分数）</label>
+                <label class="switch">
+                    <input type="checkbox" id="df_username_switch" />
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div id="manualFields">
+                <div class="field">
+                    <label for="name">昵称</label>
+                    <input type="text" id="name" placeholder="请输入昵称" maxlength="8" />
+                </div>
+                <div class="field">
+                    <label for="score-input">分数 / DX Rating</label>
+                    <input type="text" id="score-input" placeholder="请输入 Rating" maxlength="5" />
+                </div>
+            </div>
+            <div id="dfFields" style="display:none;">
+                <div class="field">
+                    <label for="df_username">水鱼用户名</label>
+                    <input type="text" id="df_username" placeholder="请输入水鱼用户名" />
+                </div>
+            </div>
+
+            <div class="section-title">卡片内容</div>
+            <div class="field">
+                <label for="chara-version">版本</label>
+                <select id="chara-version">
+                    <option value="" disabled selected>请选择版本</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="friend-select">伙伴</label>
+                <input type="text" id="chara-search" placeholder="搜索伙伴名称或别名" />
+                <select id="friend-select">
+                    <option value="" disabled selected>请先选择版本</option>
+                </select>
+                <div id="custom-name-field" style="display:none;margin-top:8px;">
+                    <label for="custom-name-input">自定义伙伴名称</label>
+                    <input type="text" id="custom-name-input" placeholder="输入伙伴名称" maxlength="20" />
+                </div>
+                <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;">
+                    <button type="button" class="btn btn-upload" id="uploadCharaBtn" style="width:auto;padding:6px 16px;margin:0;">📁 上传图片</button>
+                    <button type="button" class="btn btn-secondary btn-clear-custom" id="clear-custom-btn" style="width:auto;padding:6px 16px;margin:0;display:none;">✕ 清除</button>
+                    <input type="file" id="chara-file-input" accept="image/*" style="display:none;" />
+                </div>
+            </div>
+            <div class="field">
+                <label for="friend_code_input">好友码</label>
+                <input type="text" id="friend_code_input" placeholder="请输入好友码" maxlength="13" />
+            </div>
+            <div class="field">
+                <label for="card_number_input">卡片号码</label>
+                <input type="text" id="card_number_input" placeholder="请输入卡片号码" maxlength="20" />
+            </div>
+            <div class="field">
+                <label for="card_version_part1">卡片版本号</label>
+                <div class="row">
+                    <div><input type="text" id="card_version_part1" placeholder="前半" maxlength="2" /></div>
+                    <div style="flex:0 0 auto;line-height:38px;color:#999;">—</div>
+                    <div><input type="text" id="card_version_part2" placeholder="后半" maxlength="4" /></div>
+                </div>
+            </div>
+
+            <div class="section-title">卡片外观</div>
+            <div class="field">
+                <label for="dxpass_type">DX Pass 种类</label>
+                <select id="dxpass_type">
+                    <option value="" disabled selected>请选择 DX Pass 种类</option>
+                    <option value="GOLD_OLD">Gold (Old)</option>
+                    <option value="GOLD_NEW">Gold (New)</option>
+                    <option value="FREEDOM">FREEDOM</option>
+                    <option value="BRONZE">BRONZE</option>
+                    <option value="SILVER">SILVER</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="dxpass_bg">DX Pass 背景</label>
+                <select id="dxpass_bg">
+                    <option value="" disabled selected>请选择 DX Pass 背景</option>
+                    <option value="Splash">Splash</option>
+                    <option value="Universe">Universe</option>
+                    <option value="Festival">Festival</option>
+                    <option value="Buddies">Buddies</option>
+                    <option value="Prism">Prism</option>
+                    <option value="star_template">star_template</option>
+                    <option value="天空街区域">天空街区域</option>
+                    <option value="大都会区域">大都会区域</option>
+                    <option value="大都会区域2">大都会区域2</option>
+                    <option value="青春区域">青春区域</option>
+                    <option value="咻哇咻哇区域">咻哇咻哇区域</option>
+                    <option value="咻哇咻哇区域2">咻哇咻哇区域2</option>
+                    <option value="天界区域">天界区域</option>
+                    <option value="天界区域2">天界区域2</option>
+                    <option value="启程区域">启程区域</option>
+                    <option value="启程区域2">启程区域2</option>
+                    <option value="龙之区域">龙之区域</option>
+                    <option value="Black Rose区域">Black Rose区域</option>
+                    <option value="みかんヶ岡区域">みかんヶ岡区域</option>
+                    <option value="Deluxe区域">Deluxe区域</option>
+                </select>
+            </div>
+
+            <div class="section-title">有效期与二维码</div>
+            <div class="field">
+                <label>到期时间</label>
+                <div class="row">
+                    <div><input type="text" id="year-input" placeholder="年" maxlength="4" /></div>
+                    <div><input type="text" id="month-input" placeholder="月" maxlength="2" /></div>
+                    <div><input type="text" id="day-input" placeholder="日" maxlength="2" /></div>
+                </div>
+            </div>
+            <div class="field">
+                <label for="maid-input">二维码内容（MAID）</label>
+                <input type="text" id="maid-input" placeholder="请输入二维码的值" />
+            </div>
+            <p class="hint">填写完成后，右侧预览将自动更新。</p>
+        </div>
+    </aside>
+
+    <!-- ===== 预览区 ===== -->
+    <main id="preview-area">
+        <div id="card-wrapper">
+            <div id="DX_Pass">
+                <div id="DX_Pass_img">
+                    <img alt="bg" />
+                    <img id="chara-img" alt="chara" />
+                    <img alt="header" />
+                    <img src="./static/background.webp" alt="background" />
+                </div>
+                <img id="ratingImage" src="" alt="DX Rating Image" style="display: none;" />
+                <div id="formatted-time"></div>
+                <div id="qrcode"></div>
+                <div id="function_icons"></div>
+                <div id="friend_code"></div>
+                <div id="friend_name"></div>
+                <div id="nickname">Loading...</div>
+                <div id="rating">Loading...</div>
+                <div id="card_info">
+                    <div id="card_number"></div>
+                    <span>[maimaiDX]</span>
+                    <div id="card_version"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ===== 模态框：Cookie 查看 ===== -->
+    <div id="cookieModal" class="modal-overlay" style="display:none;">
+        <div class="modal">
+            <div class="modal-header">
+                <span>Cookie 内容</span>
+                <button class="modal-close" data-modal="cookieModal" aria-label="关闭">&times;</button>
+            </div>
+            <div class="modal-body" id="cookieContent"></div>
+        </div>
+    </div>
+
+    <!-- ===== 模态框：裁剪图片 ===== -->
+    <div id="cropModal" class="modal-overlay" style="display:none;">
+        <div class="modal crop-modal">
+            <div class="modal-header">
+                <span>裁剪伙伴图片</span>
+                <button class="modal-close" id="closeCropModalBtn" aria-label="关闭">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="crop-canvas-wrap">
+                    <canvas id="cropCanvas"></canvas>
+                </div>
+                <div class="crop-actions">
+                    <button type="button" class="btn btn-secondary" id="resetCropBtn">重置选区</button>
+                    <button type="button" class="btn" id="confirmCropBtn">确认裁剪</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 脚本 ===== -->
+    <script src="./static/html2canvas.min.js"></script>
+    <script src="./static/qr.js"></script>
+    <script src="./static/canvas.js"></script>
+    <script src="./static/app.js"></script>
+</body>
 </html>
