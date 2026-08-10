@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>角色别名管理 - DX Pass 生成器</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon" />
+    <style>
+        body { font-family: "Microsoft YaHei", sans-serif; background: #f0f0f0; margin: 0; padding: 20px; }
+        .wrap { max-width: 680px; margin: 0 auto; background: #fff; border-radius: 10px; padding: 24px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08); }
+        h1 { font-size: 20px; color: #39c5bb; margin: 0 0 4px; }
+        .sub { color: #888; font-size: 13px; margin: 0 0 18px; }
+        .sub a { color: #39c5bb; text-decoration: none; }
+        .row { display: flex; gap: 8px; margin-bottom: 12px; align-items: flex-end; }
+        .row > div { flex: 1; }
+        .row > div.fixed { flex: 0 0 auto; }
+        label { display: block; font-size: 13px; color: #555; margin-bottom: 4px; }
+        select, input[type="text"] { width: 100%; padding: 8px 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; font-family: inherit; }
+        .btn { padding: 9px 18px; background: #39c5bb; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-family: inherit; }
+        .btn:hover { background: #33b1a7; }
+        h2 { font-size: 15px; color: #333; margin: 22px 0 6px; }
+        ul#aliasList { list-style: none; padding: 0; margin: 0; }
+        ul#aliasList li { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-bottom: 1px solid #eee; font-size: 14px; gap: 12px; }
+        ul#aliasList .del { border: none; background: #f66; color: #fff; border-radius: 6px; cursor: pointer; padding: 4px 12px; flex-shrink: 0; }
+        #msg { font-size: 13px; margin-top: 8px; color: #e05d5d; }
+        #msg.ok { color: #2ba24c; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <h1>角色别名管理</h1>
+        <p class="sub">为现有角色添加别名，之后在主页面「伙伴」搜索框输入名称或别名即可快速筛选。<a href="/">← 返回生成器</a></p>
+        <div class="row">
+            <div>
+                <label for="v">版本</label>
+                <select id="v"></select>
+            </div>
+            <div>
+                <label for="c">伙伴</label>
+                <select id="c"></select>
+            </div>
+        </div>
+        <div class="row">
+            <div>
+                <label for="alias">别名</label>
+                <input type="text" id="alias" placeholder="输入别名后点击添加" />
+            </div>
+            <div class="fixed">
+                <button class="btn" onclick="addAlias()">添加别名</button>
+            </div>
+        </div>
+        <div id="msg"></div>
+        <h2>已添加的别名</h2>
+        <ul id="aliasList"></ul>
+    </div>
+    <script>
+        let charaMap = null;
+        let aliases = {};
+        const ALIAS_KEY = "chara_aliases";
+
+        function $(id) { return document.getElementById(id); }
+        function loadAliases() { try { aliases = JSON.parse(localStorage.getItem(ALIAS_KEY) || "{}"); } catch (e) { aliases = {}; } }
+        function saveAliases() { localStorage.setItem(ALIAS_KEY, JSON.stringify(aliases)); }
+
+        function loadCharaOptions() {
+            return fetch("static/chara/meta.json")
+                .then(function (r) { return r.json(); })
+                .then(function (map) {
+                    charaMap = map;
+                    const v = $("v");
+                    const order = ["Splash", "Splash Plus", "Deluxe", "Deluxe Plus", "Universe", "Universe Plus", "Festival", "Festival Plus", "Buddies", "Buddies Plus", "Prism", "Prism Plus"];
+                    order.forEach(function (series) {
+                        const has = Object.keys(map).some(function (k) { return k.indexOf(series + "/") === 0; });
+                        if (!has) return;
+                        const opt = document.createElement("option");
+                        opt.value = series;
+                        opt.textContent = series;
+                        v.appendChild(opt);
+                    });
+                })
+                .catch(function (e) { console.error("加载角色列表失败", e); });
+        }
+
+        function populateChars() {
+            const series = $("v").value;
+            const sel = $("c");
+            sel.innerHTML = "";
+            if (!series || !charaMap) return;
+            Object.keys(charaMap)
+                .filter(function (k) { return k.indexOf(series + "/") === 0; })
+                .sort()
+                .forEach(function (k) {
+                    const opt = document.createElement("option");
+                    opt.value = k;
+                    opt.textContent = charaMap[k];
+                    sel.appendChild(opt);
+                });
+            onCharaChange();
+        }
+
+        function onCharaChange() {
+            const key = $("c").value;
+            $("alias").value = (key && aliases[key]) ? aliases[key] : "";
+        }
+
+        function addAlias() {
+            const key = $("c").value;
+            const a = $("alias").value.trim();
+            const msg = $("msg");
+            if (!key) { msg.textContent = "请先选择伙伴"; msg.className = ""; return; }
+            if (!a) { msg.textContent = "请输入别名"; msg.className = ""; return; }
+            aliases[key] = a;
+            saveAliases();
+            msg.textContent = "已为「" + (charaMap[key] || key) + "」添加别名：" + a;
+            msg.className = "ok";
+            renderList();
+        }
+
+        function removeAlias(key) {
+            delete aliases[key];
+            saveAliases();
+            renderList();
+            if ($("c").value === key) $("alias").value = "";
+        }
+
+        function renderList() {
+            const ul = $("aliasList");
+            ul.innerHTML = "";
+            const keys = Object.keys(aliases).sort();
+            if (!keys.length) {
+                const li = document.createElement("li");
+                li.textContent = "暂无别名";
+                ul.appendChild(li);
+                return;
+            }
+            keys.forEach(function (key) {
+                const li = document.createElement("li");
+                const span = document.createElement("span");
+                const name = (charaMap && charaMap[key]) ? charaMap[key] + "（" + key.split("/").pop() + "）" : key;
+                span.textContent = name + " → " + aliases[key];
+                const btn = document.createElement("button");
+                btn.className = "del";
+                btn.textContent = "删除";
+                btn.onclick = function () { removeAlias(key); };
+                li.appendChild(span);
+                li.appendChild(btn);
+                ul.appendChild(li);
+            });
+        }
+
+        $("v").addEventListener("change", populateChars);
+        $("c").addEventListener("change", onCharaChange);
+        $("alias").addEventListener("keydown", function (e) { if (e.key === "Enter") addAlias(); });
+
+        loadAliases();
+        loadCharaOptions().then(function () { renderList(); });
+    </script>
+</body>
+</html>
